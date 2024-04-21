@@ -1,0 +1,31 @@
+- name: LOGS
+  hosts: web
+  become: yes
+  tasks:
+
+# Установим nginx на хост `web`
+  - name: install nginx
+    apt:
+      name: 
+        - nginx
+      state: present
+      update_cache: yes
+
+# Настроим отправку логов с хоста `web` на хост `logs`
+  - name: Change /etc/nginx/nginx.conf (error_logs)
+    lineinfile:
+      path: /etc/nginx/nginx.conf 
+      insertafter: '^\s*error_log /var/log/nginx/error.log;\s*$'
+      line: '        error_log syslog:server=192.168.56.15:514,tag=nginx_error;'
+       
+  - name: Change /etc/nginx/nginx.conf (access_logs)
+    lineinfile:
+      path: /etc/rsyslog.conf
+      regexp: '^        access_log /var/log/nginx/access.log;'
+      line: '        access_log syslog:server=192.168.56.15:514,tag=nginx_access,serverity=info combined;'
+
+  # Перезапустим nginx
+  - name: restart nginx
+    systemd:
+      state: restarted
+      name: nginx

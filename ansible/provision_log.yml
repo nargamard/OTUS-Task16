@@ -1,0 +1,45 @@
+- name: LOGS
+  hosts: log
+  become: yes
+  tasks:
+
+# Добавим стройки для сбора логов с других хостов
+  - name: configure rsyslog
+    blockinfile:
+      dest: /etc/rsyslog.conf
+      block: |
+        #Add remote logs
+        $teplate RemoteLogs,"var/log/rsyslog/%HOSTNAME%/%PROGRAMNAME%.log"
+        *.* ?RemoteLogs
+        & ~  
+
+# Откроем порты в файле /etc/rsyslog.conf 
+  - name: Open 514 UDP and TCP ports
+    lineinfile:
+      path: /etc/rsyslog.conf
+      regexp: '^#module(load="imudp")'
+      line: 'module(load="imudp")'     
+
+  - name: Open 514 UDP and TCP ports
+    lineinfile:
+      path: /etc/rsyslog.conf
+      regexp: '^#input(type="imudp" port="514")'
+      line: 'input(type="imudp" port="514")'
+
+  - name: Open 514 UDP and TCP ports
+    lineinfile:
+      path: /etc/rsyslog.conf
+      regexp: '^#module(load="imtcp")'
+      line: 'module(load="imtcp")'    
+
+  - name: Open 514 UDP and TCP ports
+    lineinfile:
+      path: /etc/rsyslog.conf
+      regexp: '^#input(type="imtcp" port="514")'
+      line: 'input(type="imtcp" port="514")'
+
+# Перезапустим rsyslog
+  - name: restart rsyslog
+    systemd:
+      state: restarted
+      name: rsyslog
